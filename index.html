@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Stock Prices Bar</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: rgb(244, 243, 243);
+        }
+        .stock-bar-container {
+            overflow: hidden;
+            white-space: nowrap;
+            background-color: #0c0c0c;
+        }
+        .stock-bar {
+            display: inline-block;
+            padding: 100px 0;
+
+            animation: scroll 20s linear infinite;
+        }
+        @keyframes scroll {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(-100%);
+            }
+        }
+        .stock-item {
+            display: inline-block;
+            margin: 0 15px;
+            color: #f7f3f3;
+            font-family: Arial, sans-serif;
+            font-size: 4.7rem;
+            padding: 30px 0;
+
+        }
+        .stock-symbol {
+            font-weight: bold;
+           
+
+        }
+        .stock-price {
+            margin-left: 10px;
+            color: #4caf50;
+          
+
+        }
+        .stock-price.down {
+            color: #f44336;
+           
+
+        }
+    </style>
+</head>
+<body>
+    <div class="stock-bar-container">
+        <div class="stock-bar" id="stockBar">
+            Loading stock prices...
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "ctl58apr01qn6d7k6bkgctl58apr01qn6d7k6bl0"; // Your Finnhub API key
+        const STOCK_SYMBOLS = ["AAPL", "GOOG", "MSFT", "AMZN", "TSLA", "NFLX", "META", "NVDA", "BABA"]; // Extended list of stock symbols
+
+        async function fetchStockPrices() {
+            const stockBar = document.getElementById('stockBar');
+            stockBar.innerHTML = ''; // Clear previous data
+
+            for (const symbol of STOCK_SYMBOLS) {
+                try {
+                    const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    if (data && data.c && data.o) { // Check if data contains required fields
+                        const currentPrice = data.c; // Current price
+                        const openPrice = data.o;   // Opening price
+
+                        const stockItem = document.createElement('div');
+                        stockItem.className = 'stock-item';
+                        stockItem.innerHTML = `
+                            <span class="stock-symbol">${symbol}</span>: 
+                            <span class="stock-price ${currentPrice < openPrice ? 'down' : ''}">
+                                $${currentPrice.toFixed(2)}
+                            </span>
+                        `;
+                        stockBar.appendChild(stockItem);
+                    } else {
+                        console.error(`Unexpected data for ${symbol}:`, data);
+                        stockBar.innerHTML += `<div class="stock-item">${symbol}: No data available</div>`;
+                    }
+                } catch (error) {
+                    console.error(`Error fetching data for ${symbol}:`, error);
+                    stockBar.innerHTML += `<div class="stock-item">${symbol}: Error</div>`;
+                }
+            }
+        }
+
+        // Fallback: Static data for testing if API fails
+        function displayStaticData() {
+            const stockBar = document.getElementById('stockBar');
+            const sampleData = [
+                { symbol: "AAPL", price: 176.32, change: 1.2 },
+                { symbol: "GOOG", price: 2850.5, change: -12.4 },
+                { symbol: "MSFT", price: 330.75, change: 3.5 },
+                { symbol: "AMZN", price: 3480.50, change: -10.2 },
+                { symbol: "TSLA", price: 865.23, change: 15.6 },
+                { symbol: "NFLX", price: 515.70, change: 8.9 },
+                { symbol: "META", price: 325.60, change: 4.2 },
+                { symbol: "NVDA", price: 1450.60, change: -6.3 },
+                { symbol: "BABA", price: 210.78, change: 2.5 }
+            ];
+
+            stockBar.innerHTML = ''; // Clear previous data
+            for (const stock of sampleData) {
+                const stockItem = document.createElement('div');
+                stockItem.className = 'stock-item';
+                stockItem.innerHTML = `
+                    <span class="stock-symbol">${stock.symbol}</span>: 
+                    <span class="stock-price ${stock.change < 0 ? 'down' : ''}">
+                        $${stock.price.toFixed(2)}
+                    </span>
+                `;
+                stockBar.appendChild(stockItem);
+            }
+        }
+
+        // Fetch prices every 60 seconds
+        setInterval(fetchStockPrices, 60000);
+
+        // Initial fetch with fallback
+        fetchStockPrices().catch((error) => {
+            console.error("Failed to fetch live data. Displaying static data.", error);
+            displayStaticData();
+        });
+    </script>
+</body>
+</html>
